@@ -1,4 +1,4 @@
-// File: D:\p1\EpicLinx\app\api\auth\register\route.ts
+// File: D:\project1\EpicLinx\app\api\auth\register\route.ts
 import * as entry from '../../../../../../app/api/auth/register/route.js'
 import type { NextRequest } from 'next/server.js'
 

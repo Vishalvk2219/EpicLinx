@@ -22,11 +22,10 @@ export async function POST(req: Request) {
 
       // ✅ 3. Generate new JWT token
       const token = jwt.sign(
-        { id: user._id, email: user.email, role: user.role },
-        JWT_SECRET,
-        { expiresIn: "7d" }
-      );
-
+            { id: user._id.toString(), role: user.role },
+            JWT_SECRET,
+            { expiresIn: "7d" }
+          );
       return NextResponse.json(
         {
           message: "User updated successfully",
@@ -42,13 +41,12 @@ export async function POST(req: Request) {
       ...data,
     });
 
-    // ✅ 5. Generate JWT token
     const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
-      JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-
+            { id: user._id.toString(), role: user.role },
+            JWT_SECRET,
+            { expiresIn: "7d" }
+          );
+          
     // ✅ 6. Return new user + token
     return NextResponse.json(
       {

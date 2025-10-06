@@ -73,25 +73,31 @@ export async function apiPost<T>(endpoint: string, body: any): Promise<T> {
   }
 }
 
+const CLOUDINARY_UPLOAD_PRESET = "epiclinx";
+const CLOUDINARY_CLOUD_NAME = "dvfeogzjm";
+
 export async function apiUpload(formData: FormData): Promise<string> {
   try {
-    const res = await fetch(`${BASE_URL}/uploads/profile-images`, {
-      method: "POST",
-      body: formData,
-      credentials: "include", // In case backend validates session
-    });
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
 
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.message || "Upload failed");
-    }
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
 
-    const data = await res.json();
-    return data.url;
-  } catch (e: any) {
-    throw new Error(e?.message || "API error");
+    if (!response.ok) throw new Error("Cloudinary upload failed");
+
+    const data = await response.json();
+    return data.secure_url;
+  } catch (error) {
+    console.error("Cloudinary upload error:", error);
+    throw error;
   }
 }
+
 
 export async function apiLogout() {
   await fetch(`${BASE_URL}/auth/logout`, {

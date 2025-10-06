@@ -11,7 +11,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { apiPost } from "@/lib/api";
 import { useRouter } from "next/navigation";
-
+import { useAuthStore } from "@/stores/useAuthStore";
 // import { useToast } from "@/hooks/use-toast";
 
 // const { toast } = useToast();
@@ -41,7 +41,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [role, setRole] = useState<"creator" | "brand">("creator");
-
+  const setUser = useAuthStore((s) => s.setUser);
   const {
     register,
     handleSubmit,
@@ -66,6 +66,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
       console.log("✅ Registration successful", response);
 
       // Save user and token to localStorage
+      setUser(response.user);
       localStorage.setItem("user", JSON.stringify(response.user));
       localStorage.setItem("token", response.token);
 

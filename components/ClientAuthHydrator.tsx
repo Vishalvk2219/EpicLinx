@@ -16,7 +16,12 @@ export const ClientAuthHydrator = ({ user }: { user: User | null }) => {
           return;
         }
         const newUser = await apiFetch("/user");
-        setUser(newUser);
+        if (newUser.found != true) {
+          clearUser();
+          return;
+        } else {
+          setUser(newUser)
+        };
       } catch (err: any) {
         if (err.message === "Unauthorized" || err.message === "jwt expired") {
           try {

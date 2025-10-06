@@ -1,4 +1,4 @@
-// File: D:\p1\EpicLinx\app\api\stripe\create-checkout-session\route.ts
+// File: D:\project1\EpicLinx\app\api\stripe\create-checkout-session\route.ts
 import * as entry from '../../../../../../app/api/stripe/create-checkout-session/route.js'
 import type { NextRequest } from 'next/server.js'
 

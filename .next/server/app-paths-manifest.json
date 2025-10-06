@@ -1,9 +1,12 @@
 {
   "/api/user/route": "app/api/user/route.js",
+  "/api/stripe/create-checkout-session/route": "app/api/stripe/create-checkout-session/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
   "/icon.svg/route": "app/icon.svg/route.js",
-  "/creator/page": "app/creator/page.js",
-  "/page": "app/page.js",
+  "/api/auth/register/route": "app/api/auth/register/route.js",
   "/creator/become-a-creator/page": "app/creator/become-a-creator/page.js",
-  "/(dashboard)/dashboard/(creator)/creator/profile/page": "app/(dashboard)/dashboard/(creator)/creator/profile/page.js",
-  "/(dashboard)/dashboard/(creator)/creator/profile-management/page": "app/(dashboard)/dashboard/(creator)/creator/profile-management/page.js"
+  "/page": "app/page.js",
+  "/creator/page": "app/creator/page.js",
+  "/(dashboard)/dashboard/(creator)/creator/profile-management/page": "app/(dashboard)/dashboard/(creator)/creator/profile-management/page.js",
+  "/(dashboard)/dashboard/(creator)/creator/page": "app/(dashboard)/dashboard/(creator)/creator/page.js"
 }

@@ -21,7 +21,9 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   let user = null;
   try {
-    user = await apiFetchServer("/user");
+    // console.log("🌍 Fetching user on server side for layout...");
+    const userFetch = await apiFetchServer("/user");
+    user = userFetch.user;
   } catch (error: any) {
     // fail silently or log if needed
     console.log(error,error.message)

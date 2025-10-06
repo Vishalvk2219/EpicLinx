@@ -88,7 +88,7 @@ export function MultiStepForm() {
       router.replace(pathname); // remove query params from URL
       setShowRestoredMsg(false);
       setShowExpiredMsg(false);
-      apiLogout();
+      // apiLogout();
       // useAuthStore.getState().clearUser();
       return;
     }

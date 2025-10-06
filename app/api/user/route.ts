@@ -28,7 +28,6 @@ export async function GET(req: Request) {
     if (!token) {
       return NextResponse.json({ error: "No token provided" }, { status: 401 });
     }
-
     // ✅ Verify JWT
     let decoded;
     try {
@@ -45,7 +44,7 @@ export async function GET(req: Request) {
     }
 
     // ✅ Return user
-    return NextResponse.json({ user,ok:true }, { status: 200 });
+    return NextResponse.json({ user, found:true }, { status: 200 });
 
   } catch (error: any) {
     console.error("User fetch error:", error);

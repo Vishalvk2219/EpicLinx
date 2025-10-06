@@ -1,38 +1,76 @@
+// app/api/auth/login/route.ts
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import  User  from "@/models/User";
+import connectDB from "@/lib/database/mogooose";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
-// 🟢 Define your real Stripe Price IDs here
-const PRICE_MAP: Record<string, string> = {
-  nano: "price_1SF7AkIXAlxzlwICv5CqQiCL",   // Replace with your real Price ID
-  
-};
+const JWT_SECRET = process.env.JWT_SECRET || "";
 
 export async function POST(req: Request) {
   try {
-    const { email, plan, currency, recurring_interval, trial } = await req.json();
+    await connectDB();
 
-    const priceId = PRICE_MAP[plan];
-    if (!priceId) {
-      return NextResponse.json({ error: `Invalid plan: ${plan}` }, { status: 400 });
+    const { username, password } = await req.json();
+
+    if (!username || !password) {
+      return NextResponse.json(
+        { message: "Username and password are required" },
+        { status: 400 }
+      );
     }
 
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      payment_method_types: ["card"],
-      customer_email: email,
-      line_items: [{ price: priceId, quantity: 1 }],
-      subscription_data: {
-        trial_period_days: trial ? 7 : undefined,
+    // Find user in DB
+    const user = await User.findOne({ email:username });
+    if (!user) {
+      return NextResponse.json(
+        { message: "Invalid username or password" },
+        { status: 401 }
+      );
+    }
+
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return NextResponse.json(
+        { message: "Invalid username or password" },
+        { status: 401 }
+      );
+    }
+
+    // Generate JWT
+    const token = jwt.sign(
+      { id: user._id.toString(), role: user.role },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // response.cookies.set("token", token, {
+    //   httpOnly: true,
+    //   path: "/",
+    //   maxAge: 60 * 60 * 24, // 1 day
+    //   sameSite: "lax",
+    // });
+    // Set httpOnly cookie (optional)
+    return NextResponse.json({
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
       },
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment/success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment/cancel`,
     });
 
-    return NextResponse.json({ url: session.url });
-  } catch (error: any) {
-    console.error("Stripe Payment Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    
+
+    
+  } catch (error) {
+    console.error("Login error:", error);
+    return NextResponse.json(
+      { message: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

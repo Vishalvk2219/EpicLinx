@@ -12,7 +12,10 @@ import FAQs from "@/components/FAQs"
 import Footer from "@/components/Footer"
 import Newsletter from "@/components/Newsletter"
 
+
+
 export default function Home() {
+  
   return (
     <div className="min-h-screen text-white">
       {/* Hero Section */}

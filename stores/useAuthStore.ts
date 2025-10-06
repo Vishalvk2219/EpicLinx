@@ -47,19 +47,13 @@ interface AuthStore {
 export const useAuthStore = create<AuthStore>((set) => ({
   user: null,
 
-  setUser: (newUser) =>
-    set((state) => ({
-      user: {
-        ...(state.user || {}),
-        ...newUser,
-      },
-    })),
+  setUser: (newUser) => set({ user: newUser }),
 
   updateUser: (updates) =>
     set((state) => {
-      console.log("Current user before update:", state.user); // debug line
-      if (!state.user) return {}; // safeguard
+      if (!state.user) return state; // keep store intact
       return {
+        ...state,
         user: {
           ...state.user,
           ...updates,

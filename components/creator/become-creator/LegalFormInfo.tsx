@@ -1,5 +1,3 @@
-// creator/become-creator/LegalInfoForm.tsx
-
 "use client";
 
 import { useState } from "react";
@@ -10,12 +8,6 @@ import { Info } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  CheckoutProvider,
-  useCheckout,
-  PaymentElement,
-} from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
 import { apiPost } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
@@ -35,10 +27,6 @@ interface LegalInfoFormProps {
   isSubmitting: boolean;
 }
 
-const stripePromise = loadStripe(
-  "pk_test_51QmqvrF1CAV35XBWhqVXIv6opDAs43J6kfSQsrNZ0atnR8ppbrlFQT1xwZbrBh6rHOmFUtvG7wbSKUO7JBkmirmB00tWC71nI9"
-);
-
 export function LegalInfoForm({
   formData,
   updateFormData,
@@ -47,7 +35,7 @@ export function LegalInfoForm({
   onBack,
   isSubmitting,
 }: LegalInfoFormProps) {
-  const [isReady, setIsReady] = useState(false);
+  const [isReady, setIsReady] = useState(true); // No PaymentElement needed
   const [isPaymentComplete, setIsPaymentComplete] = useState(false);
   const [isFailedToCreateSession, setIsFailedToCreateSession] = useState(false);
   const { toast } = useToast();
@@ -63,7 +51,7 @@ export function LegalInfoForm({
     },
   });
 
-  const fetchClientSecret = async () => {
+  const handleCheckout = async () => {
     try {
       const response: any = await apiPost("/stripe/create-checkout-session", {
         email: formData.email,
@@ -72,79 +60,68 @@ export function LegalInfoForm({
         recurring_interval: formData.recurring_interval,
         trial: formData.trial,
       });
-      console.log("response=====> ", response);
+
       if (response.error) {
-        if (response.error == "Conflict") {
+        if (response.error === "Conflict") {
           setIsPaymentComplete(true);
         } else {
           toast({
             variant: "destructive",
             title: "Failed",
-            description: response.message || "Could not load seccure form.",
+            description: response.message || "Could not load secure form.",
           });
           setIsFailedToCreateSession(true);
         }
       }
-      return response.checkoutSessionClientSecret;
+
+      if (response.url) {
+        // Redirect user to Stripe Checkout
+        window.location.href = response.url;
+      }
     } catch (e: any) {
-      console.log("Error OUTSIDE =====> ", e);
-      console.log("e.message OUTSIDE =====> ", e.message);
-      console.log("e.name OUTSIDE =====> ", e.name);
-      console.log("e.statusCode OUTSIDE =====> ", e.statusCode);
-      console.log("e.error OUTSIDE =====> ", e.error);
-    } finally {
-      setIsReady(true);
+      console.error(e);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: e.message || "Something went wrong.",
+      });
+      setIsFailedToCreateSession(true);
     }
+  };
+
+  const handleOnSubmit = (event: any) => {
+    event.preventDefault();
+    const abn = (event.target.abn?.value || "") as string;
+    updateFormData({ abn });
+    handleCheckout();
   };
 
   return (
     <div>
       {!isReady && (
         <div className="text-white text-sm mb-4 pt-20 flex flex-col items-center justify-center text-center gap-2">
-          <svg
-            className="animate-spin h-5 w-5 text-white"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8v8H4z"
-            />
-          </svg>
-          <span>Initializing Secure Payment Form...</span>
+          Initializing Secure Payment Form...
         </div>
       )}
 
       {isFailedToCreateSession && (
         <div className="text-red-400 text-sm mb-4 pt-20 flex flex-col items-center justify-center text-center gap-2">
-          <div>
-            Failed To Intialize Secure Payment Form...
-            <div className="flex justify-center gap-4 !mt-16">
-              <button
-                type="button"
-                onClick={onBack}
-                className="back-button"
-                style={{ height: "2.75rem" }}
-              >
-                Go Back
-              </button>
-              <Link
-                href="/"
-                className="rounded-full bg-epiclinx-teal hover:bg-epiclinx-teal/80 text-black px-6 py-3 transition-all w-full sm:w-auto sm:self-end"
-              >
-                Start Over
-              </Link>
-            </div>
+          Failed To Initialize Secure Payment Form...
+          <div className="flex justify-center gap-4 !mt-16">
+            <button
+              type="button"
+              onClick={onBack}
+              className="back-button"
+              style={{ height: "2.75rem" }}
+            >
+              Go Back
+            </button>
+            <Link
+              href="/"
+              className="rounded-full bg-epiclinx-teal hover:bg-epiclinx-teal/80 text-black px-6 py-3 transition-all w-full sm:w-auto sm:self-end"
+            >
+              Start Over
+            </Link>
           </div>
         </div>
       )}
@@ -152,23 +129,9 @@ export function LegalInfoForm({
       {isPaymentComplete && (
         <div className="text-xl mb-4 pt-20 flex flex-col items-center justify-center gap-2">
           <div>
-            <p className="mb-10">Hey there ! 👋</p>
+            <p className="mb-10">Hey there! 👋</p>
             <p className="mb-10">
-              Looks like you've found your way back to the Legal Info page —
-              again! 😄
-            </p>
-            <p className="mb-10">
-              Great news: your card has already been securely verified and
-              authorized. ✅ It’s now saved and ready to be used for any future
-              payments.
-            </p>
-            <p className="mb-10">
-              You can go ahead to the next step whenever you’re ready — or
-              revisit the previous one to double-check your details. Either way,
-              no pressure. We’ve saved your session and you’re all set.
-            </p>
-            <p>
-              We're here to make this process smooth and stress-free. 💙
+              Your card is already verified and authorized. ✅
             </p>
             <div className="flex justify-center gap-4 !mt-16">
               <button
@@ -190,100 +153,8 @@ export function LegalInfoForm({
         </div>
       )}
 
-      <CheckoutProvider
-        stripe={stripePromise}
-        options={{
-          fetchClientSecret,
-          elementsOptions: {
-            appearance: {
-              theme: "night",
-              variables: {
-                colorBackground: "#313131",
-                colorPrimary: "rgb(49 49 49)",
-                borderRadius: "0px",
-                fontFamily: "Inter, sans-serif",
-                spacingUnit: "6px",
-              },
-              rules: {
-                ".Input": {
-                  border: "1px solid rgb(156 163 175)",
-                  padding: "12px 16px",
-                  borderRadius: "50px",
-                },
-                ".Label": {
-                  fontSize: "14px",
-                  color: "#fff",
-                },
-                ".AccordionItem": {
-                  border: "0px",
-                  padding: "0px",
-                  boxShadow: "0px",
-                },
-                ".FadeWrapper": {
-                  dosplay: "none",
-                },
-              },
-            },
-          },
-        }}
-      >
-        <InnerLegalForm
-          updateFormData={updateFormData}
-          onBack={onBack}
-          onNext={onNext}
-          setIsReady={setIsReady}
-          register={register}
-          errors={errors}
-          isSubmitting={isSubmitting}
-        />
-      </CheckoutProvider>
-    </div>
-  );
-}
-
-// ⬇️ Inner Component with useCheckout inside context
-function InnerLegalForm({
-  updateFormData,
-  onBack,
-  onNext,
-  setIsReady,
-  register,
-  errors,
-  isSubmitting,
-}: {
-  updateFormData: (data: any) => void;
-  onBack: () => void;
-  onNext: (checkout: any, abn: string) => void;
-  setIsReady: (v: boolean) => void;
-  register: any;
-  errors: any;
-  isSubmitting: boolean;
-}) {
-  const checkout = useCheckout();
-
-  const handleOnSubmit = (event: any) => {
-    event.preventDefault();
-    const abn = (event.target.abn?.value || "") as string;
-    updateFormData({ abn });
-    onNext(checkout, abn);
-  };
-
-  return (
-    // <form onSubmit={handleOnSubmit}>
-    <form onSubmit={handleOnSubmit}>
-      <div className="p-0 bg-bg-transparent rounded-lg">
-        <PaymentElement
-          className="bg-bg-transparent text-black p-0 rounded-lg"
-          onReady={() => setIsReady(true)}
-          options={{
-            fields: {
-              billingDetails: {
-                address: "never",
-              },
-            },
-          }}
-        />
-
+      {/* Form */}
+      <form onSubmit={handleOnSubmit}>
         <div className="pt-7 space-y-2">
           <Label
             htmlFor="abn"
@@ -301,51 +172,25 @@ function InnerLegalForm({
             <p className="text-red-500 text-xs mt-1">{errors.abn.message}</p>
           )}
         </div>
-      </div>
 
-      <div className="flex justify-center gap-4 !mt-16">
-        <button
-          type="button"
-          onClick={onBack}
-          className="back-button"
-          style={{ height: "2.75rem" }}
-        >
-          Back
-        </button>
-        <Button
-          type="submit"
-          className="rounded-full bg-epiclinx-teal hover:bg-epiclinx-teal/80 text-black px-6 py-3 transition-all w-full sm:w-auto sm:self-end"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <span className="flex items-center gap-2">
-              <svg
-                className="animate-spin h-5 w-5 text-black"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8v8H4z"
-                />
-              </svg>
-              Please Wait ...
-            </span>
-          ) : (
-            "Continue"
-          )}
-        </Button>
-      </div>
-    </form>
+        <div className="flex justify-center gap-4 !mt-16">
+          <button
+            type="button"
+            onClick={onBack}
+            className="back-button"
+            style={{ height: "2.75rem" }}
+          >
+            Back
+          </button>
+          <Button
+            type="submit"
+            className="rounded-full bg-epiclinx-teal hover:bg-epiclinx-teal/80 text-black px-6 py-3 transition-all w-full sm:w-auto sm:self-end"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Please Wait ..." : "Continue"}
+          </Button>
+        </div>
+      </form>
+    </div>
   );
 }

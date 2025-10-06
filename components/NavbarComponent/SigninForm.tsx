@@ -40,6 +40,7 @@ const SignInForm: React.FC<SignInFormProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const setUser = useAuthStore((s) => s.setUser);
   const {
     register,
     handleSubmit,
@@ -52,17 +53,23 @@ const SignInForm: React.FC<SignInFormProps> = ({
     setLoading(true);
     try {
       const response = await apiPost<{
-        res:any;
+        message: string,token:string,user:any;
       }>("/auth/login", data);
+      if (response.user){
       console.log("✅ Login successful", response);
 
       // 1. Save user data to global state
+      setUser(response.user);
       localStorage.setItem("token",response.token);
       useAuthStore.getState().setUser(response.user);
 
       // 3. Close modal & redirect
       onClose();
-      router.push("/dashboard/" + response.user.role);
+      router.push("/dashboard/" + response.user.role);}
+      else{
+        onClose();
+        router.push("/");
+      }
     } catch (error: any) {
       console.error("❌ Login failed:", error);
       toast({

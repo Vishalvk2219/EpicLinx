@@ -16,7 +16,7 @@ export async function apiFetchServer(endpoint: string, options?: RequestInit) {
     cache: "no-store",
   });
 
-  if (!res.ok) throw new Error("Unauthorized");
+  if (!res) throw new Error("Unauthorized");
 
   return res.json();
 }

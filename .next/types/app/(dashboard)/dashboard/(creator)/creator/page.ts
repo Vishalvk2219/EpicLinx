@@ -1,4 +1,4 @@
-// File: D:\p1\EpicLinx\app\(dashboard)\dashboard\(creator)\creator\page.tsx
+// File: D:\project1\EpicLinx\app\(dashboard)\dashboard\(creator)\creator\page.tsx
 import * as entry from '../../../../../../../app/(dashboard)/dashboard/(creator)/creator/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
