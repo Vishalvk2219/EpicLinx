@@ -1,0 +1,9 @@
+{
+  "/api/user/route": "app/api/user/route.js",
+  "/icon.svg/route": "app/icon.svg/route.js",
+  "/creator/page": "app/creator/page.js",
+  "/page": "app/page.js",
+  "/creator/become-a-creator/page": "app/creator/become-a-creator/page.js",
+  "/(dashboard)/dashboard/(creator)/creator/profile/page": "app/(dashboard)/dashboard/(creator)/creator/profile/page.js",
+  "/(dashboard)/dashboard/(creator)/creator/profile-management/page": "app/(dashboard)/dashboard/(creator)/creator/profile-management/page.js"
+}

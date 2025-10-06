@@ -34,6 +34,7 @@ export async function apiPost<T>(endpoint: string, body: any): Promise<T> {
     const res = await fetch(`${BASE_URL}${endpoint}`, {
       method: "POST",
       headers: {
+        "Authorization": `Bearer ${localStorage.getItem("token") || ""}`,
         "Content-Type": "application/json",
       },
       credentials: "include",

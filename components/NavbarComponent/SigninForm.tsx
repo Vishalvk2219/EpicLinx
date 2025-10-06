@@ -52,11 +52,12 @@ const SignInForm: React.FC<SignInFormProps> = ({
     setLoading(true);
     try {
       const response = await apiPost<{
-        user: any;
+        res:any;
       }>("/auth/login", data);
       console.log("✅ Login successful", response);
 
       // 1. Save user data to global state
+      localStorage.setItem("token",response.token);
       useAuthStore.getState().setUser(response.user);
 
       // 3. Close modal & redirect
