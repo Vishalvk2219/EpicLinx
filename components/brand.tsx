@@ -22,10 +22,10 @@ const Brand = () => {
                 <div className="scroll-marquee">
                     <div className="flex items-center gap-12 md:gap-[120px] px-2">
                         {slider.map((item, index) => (
-                            <Image key={index} src={item.src} alt={item.alt} width={80} height={40} />
+                            <Image key={index} src={item.src} alt={item.alt} width={80} height={40} className='h-auto w-auto'/>
                         ))}
                         {slider.map((item, index) => (
-                            <Image key={index} src={item.src} alt={item.alt} width={80} height={40} />
+                            <Image key={index} src={item.src} alt={item.alt} width={80} height={40} className='h-auto w-auto' />
                         ))}
                     </div>
                 </div>

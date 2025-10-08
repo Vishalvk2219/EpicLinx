@@ -14,7 +14,7 @@ export interface User {
   phone?: string;
   location?: string;
   role: UserRole;
-  onboardingStatus: OnboardingStatus;
+  onboardingStatus?: OnboardingStatus;
   isEmailVerified: boolean;
   isActive: boolean;
   instagram?: string;
@@ -31,8 +31,8 @@ export interface User {
   cardExpiry?: string;
   abn?: string;
   heardAboutUs?: string;
-  notificationsEnabled: boolean;
-  agreedToTerms: boolean;
+  notificationsEnabled?: boolean;
+  agreedToTerms?: boolean;
   createdAt: string;
   updatedAt: string;
 }

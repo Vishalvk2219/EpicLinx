@@ -27,7 +27,7 @@ const Cta1 = () => {
             alt="cta"
             width={180}
             height={180}
-            className="object-contain"
+            className="object-contain h-auto w-auto"
           />
         </div>
       </div>

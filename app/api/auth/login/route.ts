@@ -1,11 +1,13 @@
-// app/api/auth/login/route.ts
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import  User  from "@/models/User";
+import User from "@/models/User";
 import connectDB from "@/lib/database/mogooose";
 
-const JWT_SECRET = process.env.JWT_SECRET || "";
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error("❌ JWT_SECRET is not defined in environment variables");
+}
 
 export async function POST(req: Request) {
   try {
@@ -13,63 +15,61 @@ export async function POST(req: Request) {
 
     const { username, password } = await req.json();
 
+    // 🧩 Validate input
     if (!username || !password) {
       return NextResponse.json(
-        { message: "Username and password are required" },
+        { success: false, message: "Username and password are required" },
         { status: 400 }
       );
     }
 
-    // Find user in DB
-    const user = await User.findOne({ email:username });
+    // 🔍 Find user by email (username acts as email)
+    const user = await User.findOne({ email: username }).select("+password");
+
     if (!user) {
       return NextResponse.json(
-        { message: "Invalid username or password" },
+        { success: false, message: "Invalid credentials" },
         { status: 401 }
       );
     }
 
-    // Verify password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    // 🔐 Validate password
+    const isPasswordValid = await user.comparePassword(password);
+    // const isPasswordValid = user.password === password;
+    // console.log(user.password,password)
     if (!isPasswordValid) {
       return NextResponse.json(
-        { message: "Invalid username or password" },
+        { success: false, message: "Invalid credentials" },
         { status: 401 }
       );
     }
 
-    // Generate JWT
+    // 🪪 Generate JWT token
     const token = jwt.sign(
-      { id: user._id.toString(), role: user.role },
+      { id: user._id.toString(),email:username, role: user.role },
       JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    // response.cookies.set("token", token, {
-    //   httpOnly: true,
-    //   path: "/",
-    //   maxAge: 60 * 60 * 24, // 1 day
-    //   sameSite: "lax",
-    // });
-    // Set httpOnly cookie (optional)
-    return NextResponse.json({
-      message: "Login successful",
-      token,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-      },
-    });
+    // 🧹 Convert user to plain object & remove password
+    const userResponse = user.toObject();
+    delete userResponse.password; // ensures password never goes to frontend
 
-    
-
-    
-  } catch (error) {
-    console.error("Login error:", error);
+    // ✅ Send back everything (except password)
     return NextResponse.json(
-      { message: "Internal server error" },
+      {
+        success: true,
+        message: "Login successful",
+        token,
+        user: userResponse,
+      },
+      { status: 200 }
+    );
+
+  } catch (error) {
+    console.error("❌ Login error:", error);
+    return NextResponse.json(
+      { success: false, message: "Internal server error" },
       { status: 500 }
     );
   }

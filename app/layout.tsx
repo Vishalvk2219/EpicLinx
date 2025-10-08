@@ -9,7 +9,7 @@ import { apiFetchServer } from "@/lib/api-server";
 import { ClientAuthHydrator } from "@/components/ClientAuthHydrator";
 
 const inter = Inter({ subsets: ["latin"] });
-
+const LOCAL_KEY = "epiclinx_signup_data";
 export const metadata: Metadata = {
   title: "Epiclinx - Connect Brands with Creators",
   description: "Epiclinx is a platform that connects brands with creators for authentic collaborations.",
@@ -21,11 +21,10 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   let user = null;
   try {
-    // console.log("🌍 Fetching user on server side for layout...");
     const userFetch = await apiFetchServer("/user");
     user = userFetch.user;
   } catch (error: any) {
-    // fail silently or log if needed
+    console.log("Error fetching user data:");
     console.log(error,error.message)
   }
 

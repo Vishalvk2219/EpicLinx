@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form"
+import { apiPost } from "@/lib/api"
 
 const accountSchema = z.object({
   newPassword: z.string().min(8, "Password must be at least 8 characters"),
@@ -25,10 +26,15 @@ export default function AccountTab() {
     }
   })
 
-  function onSubmit(data: z.infer<typeof accountSchema>) {
-    console.log(data)
-    // Handle form submission
-  }
+  async function onSubmit(data: z.infer<typeof accountSchema>) {
+    try{
+      const res = await apiPost("/user/update-password", { password: data.newPassword });
+      if (res.success && res.status === 200){
+        console.log("Password updated successfully", res);
+    }
+  }catch(err){
+      console.error("Error updating password", err);
+    }}
 
   return (
     <div className="max-w-4xl mx-auto">

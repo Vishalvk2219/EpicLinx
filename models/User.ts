@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 import bcrypt from "bcryptjs";
+import { BlobOptions } from "buffer";
 
 // Define user interface
 export interface IUser extends Document {
@@ -7,7 +8,7 @@ export interface IUser extends Document {
   profileImageUrl?: string;
   firstName?: string;
   lastName?: string;
-  email?: string;
+  email: string;
   phone?: string;
   displayName?: string;
   location?: string;
@@ -26,6 +27,7 @@ export interface IUser extends Document {
   heardAboutUs?: string;
   notificationsEnabled?: boolean;
   agreedToTerms?: boolean;
+  isEmailVerified:boolean;
   onboardingStatus: number; // 1-4 steps completed
 
   comparePassword(candidatePassword: string): Promise<boolean>;

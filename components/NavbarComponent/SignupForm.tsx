@@ -12,17 +12,27 @@ import { cn } from "@/lib/utils";
 import { apiPost } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/useAuthStore";
-// import { useToast } from "@/hooks/use-toast";
-
-// const { toast } = useToast();
-
+import OTPInputUI from "./OtpComponent";
+import { toast } from "@/components/ui/use-toast";
 interface SignUpFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSwitchToSignIn: () => void;
   onSwitchToForgotPassword: () => void;
 }
-
+export type UserRole = "creator" | "brand" | "admin";
+interface RegisterResponse {
+  success: boolean;
+  message: string;
+  token: string;
+  user: {
+    id: string;
+    email: string;
+    role: UserRole;
+    createdAt: string;
+    updatedAt: string;
+  };  
+}
 // Zod schema
 const signUpSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -41,7 +51,14 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [role, setRole] = useState<"creator" | "brand">("creator");
-  const setUser = useAuthStore((s) => s.setUser);
+  const [gettingOTP, setGettingOTP] = useState(false);
+  const [showOTP, setShowOTP] = useState(false);
+  const [resend, setResend] = useState(false); // to track if OTP has been sent at least once
+  const [otp, setOPT] = useState("");
+  const [signup, setSignup] = useState(false);
+  const [verifyingOTP, setVerifyingOTP] = useState(false);
+
+  const setUser = useAuthStore((state) => state.setUser);
   const {
     register,
     handleSubmit,
@@ -55,32 +72,30 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
     try {
       const payload = {
         ...data,
-        role, // includes "creator" or "brand"
+        isEmailVerified:true,
+        role, 
       };
 
-      const response = await apiPost<{ token: string; user: any }>(
+      const response = await apiPost<RegisterResponse>(
         "/auth/register",
         payload
       );
 
       console.log("✅ Registration successful", response);
-
-      // Save user and token to localStorage
-      setUser(response.user);
-      localStorage.setItem("user", JSON.stringify(response.user));
-      localStorage.setItem("token", response.token);
-
+      setUser({...response.user,isActive:true,isEmailVerified:true});
       // Close the modal
+      localStorage.setItem("token",response.token);
+      document.cookie = `accessToken=${response.token}; path=/;`
       onClose();
       router.push("/dashboard/" + role);
     } catch (error: any) {
       console.error("❌ Registration failed:", error);
 
-      // toast({
-      //   variant: "destructive",
-      //   title: "Sign Up failed",
-      //   description: error.message || "Something went wrong",
-      // });
+      toast({
+        variant: "destructive",
+        title: "Sign Up failed",
+        description: error.message || "Something went wrong",
+      });
     } finally {
       setLoading(false);
     }
@@ -119,6 +134,68 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
     onClose(); // close current modal
     onSwitchToForgotPassword(); // open Forgot Password modal
   };
+
+  const getOTP = async () => {
+    setGettingOTP(true);
+
+    try {
+      const email = (document.getElementById("email") as HTMLInputElement).value;
+
+      const res = await fetch("/api/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const otpData = await res.json();
+      // const data = { success: true }; // Mock response for demonstration
+      // const res = { status: 200 }; // Mock response for demonstration
+      if (otpData.success && res.status === 200) {
+        setShowOTP(true);
+        setResend(true);
+        console.log("OTP sent successfully:", otpData);
+      } else {
+        console.error("Failed to send OTP:", otpData);
+      }
+    } catch (err: any) {
+      console.error("Error sending OTP:", err);
+    } finally {
+      setGettingOTP(false);
+    }
+  };
+
+  const verifyOTP = async () => {
+  if (!otp || otp.length !== 6) {
+    console.error("Invalid OTP: Please enter the 6-digit OTP.");
+    return;
+  }
+
+  setVerifyingOTP(true); // start loading
+
+  try {
+    const email = (document.getElementById("email") as HTMLInputElement).value;
+
+    const res = await fetch("/api/verify-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, otp }),
+    });
+
+    const otpData = await res.json();
+
+    if (res.status === 200 && otpData.success) {
+      console.log("OTP Verified: You can now proceed.");
+      setSignup(true)
+    } else {
+      console.error("OTP Verification Failed:", otpData.message || "Invalid OTP, try again.");
+    }
+  } catch (err: any) {
+    console.error("Error verifying OTP:", err);
+  } finally {
+    setVerifyingOTP(false); // stop loading
+  }
+};
+
 
   return (
     <>
@@ -223,42 +300,77 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
                 </button>
               </div>
             </div>
+            {showOTP ? (
+              <OTPInputUI length={6} onChange={(otp) => setOPT(otp)} />
+            ) : null}
 
-            <div className="flex justify-end">
-              <Button
-                type="submit"
-                className="rounded-full bg-epiclinx-teal hover:bg-epiclinx-teal/80 text-black px-6 py-3 transition-all w-full sm:w-auto sm:self-end"
-                disabled={loading}
+            <div className="flex justify-between items-center w-full mt-4">
+              {/* Send OTP button (left) */}
+              <button
+                className="rounded-full px-4 py-2 text-sm font-medium transition-all
+             bg-epiclinx-teal text-black
+             hover:bg-epiclinx-teal/80
+             disabled:bg-gray-400 disabled:text-gray-700 disabled:cursor-not-allowed disabled:hover:bg-gray-400"
+                onClick={getOTP}
+                type="button"
+                disabled={gettingOTP}
               >
-                {loading ? (
-                <span className="flex items-center gap-2">
-                  <svg
-                    className="animate-spin h-5 w-5 text-black"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8v8H4z"
-                    />
-                  </svg>
-                  Loading...
-                </span>
-              ) : (
-                "Sign Up"
+                {gettingOTP ? "Sending..." : resend ? "Resend OTP" : "Get OTP"}
+              </button>
+
+              {/* Verify OTP button (right) */}
+              {showOTP && (
+                <button
+                  className="rounded-full px-4 py-2 text-sm font-medium border transition-all
+       bg-white text-epiclinx-teal border-epiclinx-teal
+       hover:bg-epiclinx-teal hover:text-white
+       disabled:bg-gray-200 disabled:text-gray-500 disabled:border-gray-300 disabled:hover:bg-gray-200 disabled:cursor-not-allowed"
+                  disabled={otp.length !== 6 || verifyingOTP}
+                  onClick={verifyOTP}
+                  type="button"
+                >
+                  {verifyingOTP ? "Verifying..." : "Verify OTP"}
+                </button>
               )}
-              </Button>
             </div>
+
+            {signup ? (
+              <div className="flex justify-end">
+                <Button
+                  type="submit"
+                  className="rounded-full bg-epiclinx-teal hover:bg-epiclinx-teal/80 text-black px-6 py-3 transition-all w-full sm:w-auto sm:self-end"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <svg
+                        className="animate-spin h-5 w-5 text-black"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v8H4z"
+                        />
+                      </svg>
+                      Loading...
+                    </span>
+                  ) : (
+                    "Sign Up"
+                  )}
+                </Button>
+              </div>
+            ): null}
 
             <div className="pt-4">
               <p className="text-white font-light">

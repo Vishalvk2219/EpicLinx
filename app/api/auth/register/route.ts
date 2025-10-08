@@ -1,63 +1,70 @@
 import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import connectDB from "@/lib/database/mogooose";
 import User from "@/models/User";
 
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET; // Make sure it's set in .env.local
 
 export async function POST(req: Request) {
   try {
     await connectDB();
-    const data = await req.json();
-    console.log("🟢 Received data:", data);
+    const body = await req.json();
 
-    // ✅ 1. Check if user exists
-    let user = await User.findOne({ email: data.email });
+    const { email, password, isEmailVerified, role } = body;
 
-    if (user) {
-      console.log("🟡 Existing user found, updating...");
-      // ✅ 2. Update existing user with any new fields provided
-      Object.assign(user, data);
-      await user.save();
-
-      // ✅ 3. Generate new JWT token
-      const token = jwt.sign(
-            { id: user._id.toString(), role: user.role },
-            JWT_SECRET,
-            { expiresIn: "7d" }
-          );
+    // ✅ 1. Validate input
+    if (!email || !password) {
       return NextResponse.json(
-        {
-          message: "User updated successfully",
-          token,
-          user,
-        },
-        { status: 200 }
+        { success: false, message: "Email and password are required." },
+        { status: 400 }
       );
     }
 
-    // ✅ 4. Create new user if not found
-    user = await User.create({
-      ...data,
+    // ✅ 2. Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return NextResponse.json(
+        { success: false, message: "User already exists. Please login." },
+        { status: 409 }
+      );
+    }
+
+
+    // ✅ 4. Create new user
+    const newUser = await User.create({
+      email:email,
+      password: password,
+      isEmailVerified:isEmailVerified || false,
+      role: role || "creator", // default role
     });
 
+    // ✅ 5. Generate JWT token
     const token = jwt.sign(
-            { id: user._id.toString(), role: user.role },
-            JWT_SECRET,
-            { expiresIn: "7d" }
-          );
-          
-    // ✅ 6. Return new user + token
+      { id: newUser._id.toString(),email:email, role: newUser.role },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // ✅ 6. Remove password from response
+    const userResponse = newUser.toObject();
+    delete userResponse.password;
+
+    // ✅ 7. Return success
     return NextResponse.json(
       {
-        message: "User registered successfully",
+        success: true,
+        message: "User registered successfully.",
         token,
-        user,
+        user: userResponse,
       },
       { status: 201 }
     );
   } catch (error: any) {
     console.error("❌ Register Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json(
+      { success: false, message: "Server error. Please try again.", error: error.message },
+      { status: 500 }
+    );
   }
 }

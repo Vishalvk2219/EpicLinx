@@ -12,10 +12,10 @@ import SignInForm from "./SigninForm";
 import SignUpForm from "./SignupForm";
 import ForgotPasswordForm from "./ForgotPassword";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { apiLogout } from "@/lib/api";
 
 const Navbar = () => {
   const  user  = useAuthStore((state) => state.user);
-  console.log("thisis",user);
   // === Local State for Menu & Modals ===
   const [menuOpen, setMenuOpen] = useState(false);
   const [signInOpen, setSignInOpen] = useState(false);
@@ -140,12 +140,15 @@ const Navbar = () => {
       </div>
     </div>
   );
-  const logout = () => {
-    useAuthStore.getState().clearUser();
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    window.location.href = "/";
-  }
+  // const logout = async () => {
+  //   try{
+  //   await fetch("/api/logout", { method: "POST" });
+  //   localStorage.removeItem("token");
+  //   document.cookie = "accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+  //   useAuthStore.getState().clearUser();
+  //   window.location.href = "/";}
+  //   catch(err){console.log("Failed to logout",err);}
+  // }
   return (
     <>
       {/* === Top Navbar === */}
@@ -172,10 +175,10 @@ const Navbar = () => {
             <NavMenuItem href="/brand">I’m a Brand</NavMenuItem>
             <NavMenuItem href="/creator">I’m a Creator</NavMenuItem>
             <NavMenuItem href="#">Messages</NavMenuItem>
-            <button className="bg-red-500 p-2 rounded-md" onClick={logout}>Signout</button>
 
             {/* User Profile / Sign In */}
             {user ? (
+              <>
               <Link
                 href={`/dashboard/${user.role || "creator"}/profile`}
                 className="flex items-center gap-2"
@@ -193,9 +196,11 @@ const Navbar = () => {
                   className="rounded-full object-cover"
                 />
                 <span className="text-sm text-epiclinx-teal">
-                  Hello, {user.displayName || user.firstName}
+                  Hello,{user.displayName || user.firstName || user.email?.split("@")[0]}
                 </span>
               </Link>
+              {user ? <button className="bg-red-400 text-gray-100 px-2 py-1 rounded-md" onClick={()=>{apiLogout();window.location.href="/"}}>Signout</button> : null}
+              </>
             ): (
               <Button
                 variant="default"

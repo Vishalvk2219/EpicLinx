@@ -40,7 +40,7 @@ const SignInForm: React.FC<SignInFormProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const setUser = useAuthStore((s) => s.setUser);
+  const setUser = useAuthStore((state) => state.setUser);
   const {
     register,
     handleSubmit,
@@ -52,16 +52,20 @@ const SignInForm: React.FC<SignInFormProps> = ({
   const onSubmit = async (data: SignInFormData) => {
     setLoading(true);
     try {
-      const response = await apiPost<{
-        message: string,token:string,user:any;
-      }>("/auth/login", data);
+      
+      const response = await apiPost<any>("/auth/login", data);
       if (response.user){
       console.log("✅ Login successful", response);
 
       // 1. Save user data to global state
+      try{
       setUser(response.user);
       localStorage.setItem("token",response.token);
-      useAuthStore.getState().setUser(response.user);
+      useAuthStore.getState().setUser(response.user)
+      document.cookie = `accessToken=${response.token}; path=/;`;
+;}
+      
+      catch(err){console.log(err);}
 
       // 3. Close modal & redirect
       onClose();

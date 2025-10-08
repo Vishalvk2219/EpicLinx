@@ -72,9 +72,8 @@ export function MultiStepForm() {
     recurring_interval: recurring_interval || "",
     trial: trial ? 1 : 0,
   };
-
+  
   const [formData, setFormData] = useState(defaultFormData);
-
   // 🧠 Restore from localStorage
   useEffect(() => {
     console.log("Inside useEffect");
@@ -84,7 +83,7 @@ export function MultiStepForm() {
       searchParams.get("plan") &&
       searchParams.get("recurring_interval")
     ) {
-      localStorage.removeItem(LOCAL_KEY);
+      // localStorage.removeItem(LOCAL_KEY);
       router.replace(pathname); // remove query params from URL
       setShowRestoredMsg(false);
       setShowExpiredMsg(false);
@@ -234,10 +233,10 @@ export function MultiStepForm() {
               ? "Your next big brand collaboration starts right here. Create your account today."
               : "Create an account today and start connecting with our Epic network of creators."
             : currentStep === 2
-            ? "Quick setup – securely connect your payment details."
-            : currentStep === 3
-            ? "Nearly there – set up your login."
-            : "Final touch – a few quick details."}
+              ? "Quick setup – securely connect your payment details."
+              : currentStep === 3
+                ? "Nearly there – set up your login."
+                : "Final touch – a few quick details."}
         </p>
       </div>
 
@@ -288,9 +287,10 @@ export function MultiStepForm() {
                     };
                     const response = await apiPost<{
                       user: any;
-                    }>("/auth/register", payload);
-                    useAuthStore.getState().setUser(response.user);
-                    nextStep();
+                    }>("/auth/register-form", payload);
+                    useAuthStore.getState().updateUser(response.user);
+                    setCurrentStep(3)
+                    // nextStep();
                   } catch (err: any) {
                     toast({
                       variant: "destructive",
@@ -340,7 +340,7 @@ export function MultiStepForm() {
                       "/auth/legal-info",
                       payload
                     );
-                    useAuthStore.getState().setUser(response.user);
+                    useAuthStore.getState().updateUser(response.user);
                     nextStep();
                   }
                   setIsSubmitting(false);
@@ -368,7 +368,7 @@ export function MultiStepForm() {
                         email: formData.email,
                       }
                     );
-                    useAuthStore.getState().setUser(response.user);
+                    useAuthStore.getState().updateUser(response.user);
                     nextStep();
                   } catch (err: any) {
                     toast({
@@ -403,7 +403,7 @@ export function MultiStepForm() {
                         agreedToTerms: dataFromChild.agreeToTerms,
                       }
                     );
-                    useAuthStore.getState().setUser(response.user);
+                    useAuthStore.getState().updateUser(response.user);
                     toast({
                       variant: "success",
                       title: "Welcome To EpicLinx 🚀",
